@@ -13,14 +13,14 @@ def draw(img, contour_list):
     x_list = []
     y_list = []
     for contour in contour_list:
-        cv2.drawContours(output_img, contour, -1, color = (255, 255, 255), thickness = 3)
+        cv2.drawContours(output_img, [contour], -1, color = (0, 0, 255), thickness = -1)
 
         rect = cv2.minAreaRect(contour)
         center, size, angle = rect
         center = np.array(center, dtype=np.int32)
 
-        cv2.drawContours(output_img, [cv2.boxPoints(rect).astype(int)], -1, color = (0, 0, 255), thickness = 2)
-        cv2.circle(output_img, center = center, radius = 3, color = (0, 0, 255), thickness = -1)
+        # cv2.drawContours(output_img, [cv2.boxPoints(rect).astype(int)], -1, color = (0, 0, 255), thickness = 2)
+        # cv2.circle(output_img, center = center, radius = 3, color = (0, 0, 255), thickness = -1)
 
         x_list.append((center[0] - width / 2) / (width / 2))
         x_list.append((center[1] - width / 2) / (width / 2))
