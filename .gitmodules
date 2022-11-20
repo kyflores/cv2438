@@ -1,0 +1,6 @@
+[submodule "multidet/submodules/yolov5"]
+	path = multidet/submodules/yolov5
+	url = https://github.com/ultralytics/yolov5
+[submodule "multidet/submodules/sort"]
+	path = multidet/submodules/sort
+	url = https://github.com/abewley/sort
