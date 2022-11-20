@@ -28,6 +28,7 @@ def map_to_sort_id(dets, trackers):
     for ix, m in enumerate(mins):
         dets[ix]['sort_id'] = trackers[m][-1]
 
+
 def draw(img, detections):
     # TODO placeholder skip if empty
     if len(detections) == 0:
@@ -56,6 +57,15 @@ def draw(img, detections):
     return withbox
 
 def detect(opt):
+    # I recommend that you set the camera to the highest frame rate that yields
+    # an acceptable exposure.
+    #
+    # For instance...
+    # v4l2-ctl -d 3 -c exposure_time_absolute=166
+    #
+    # Use v4l2-ctl --all -d <devicenum> to find the appropriate control
+    # There's probably also an auto exposure mode you need to disable.
+
     wc = opt.webcam
 
     cap = cv2.VideoCapture(wc)
