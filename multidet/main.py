@@ -2,28 +2,31 @@ import argparse
 import time
 
 import torch
+import torchvision.ops as ops
 import numpy as np
 import cv2
 import detectors as dets
 
 import submodules.sort.sort as sort
 
-# Primitive mapping of sort boxes to detection boxes
-# using sum of squared differences between corners.
-def map_to_sort_id(det, trackers, thresh = 1.0):
+def map_to_sort_id(dets, trackers):
     id_num, _ = trackers.shape
+    xyxys = [torch.tensor(x['sort_xyxy'][:4]) for x in dets]
 
-    det_c = np.expand_dims(det['sort_xyxy'][:4], 0)
-    det_c = np.repeat(det_c, id_num, axis=0)
-    trk_c = trackers[:, :4]
-    assert det_c.shape == trk_c.shape
+    # Collect all the detections into an (N, 4)
+    det_c = torch.stack(xyxys)
+    # Get track into an (M, 4)
+    trk_c = torch.from_numpy(trackers[..., :4])
 
-    ssd = np.sum((det_c - trk_c)**2, axis=1)
-    idx = np.argmin(ssd)
-    # if ssd[idx] < thresh:
-    return trackers[idx, 4]
-    # else:
-        # return -1
+    ious = ops.box_iou(det_c, trk_c)
+
+    # N (detections) is on rows, M (sort boxes) on columns.
+    # dim=1 reduces horizontally, giving the max column index for each row
+    # The index of the max IOU is the index in the sort result that
+    # best matches that particular index in the detection result.
+    mins = torch.argmax(ious, dim=1)
+    for ix, m in enumerate(mins):
+        dets[ix]['sort_id'] = trackers[m][-1]
 
 def draw(img, detections):
     # TODO placeholder skip if empty
@@ -96,10 +99,9 @@ def detect(opt):
 
         # Go back through the array and assign SORT IDs to the boxes
         # based on IOU with SORT boxes.
-        for det in all_dets:
-            if trackers.shape[0] > 0:
-                newid = map_to_sort_id(det, trackers, thresh=256.0)
-                det['sort_id'] = newid
+        if trackers.shape[0] > 0:
+            newid = map_to_sort_id(all_dets, trackers)
+            # det['sort_id'] = newid
 
         with_boxes = draw(frame, all_dets)
         cv2.imshow('detector', with_boxes)
