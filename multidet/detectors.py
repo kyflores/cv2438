@@ -7,7 +7,10 @@ import dt_apriltags as dtap
 from scipy.spatial.transform import Rotation
 
 # Default parameter set to use for the Logitech C310
-C310_PARAMS=(995.5027920759295, 1001.3658254510876, 618.5636884544525, 369.80679933903093)
+C310_PARAMS=(995.5027920759295,
+             1001.3658254510876,
+             618.5636884544525,
+             369.80679933903093)
 
 # Relative to main.py
 YOLOV5_PATH='submodules/yolov5/'

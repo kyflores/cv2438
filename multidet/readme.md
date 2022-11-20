@@ -15,6 +15,9 @@ for each detection type
 * `color` RGB triple for the box color.
 * `corners` of the bounding area of the detection
   * numpy array, 4 rows, 2 columns, shape = (4, 2)
+* `sort_xyxy`, xmin, xmax, ymin, ymax format for a bouding box.
+  * This format is required by the SORT tracker, and is mostly
+    redunant with `corners`
 
 Multiple detections should be returned in a list.
 

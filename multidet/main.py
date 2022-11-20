@@ -8,6 +8,23 @@ import detectors as dets
 
 import submodules.sort.sort as sort
 
+# Primitive mapping of sort boxes to detection boxes
+# using sum of squared differences between corners.
+def map_to_sort_id(det, trackers, thresh = 1.0):
+    id_num, _ = trackers.shape
+
+    det_c = np.expand_dims(det['sort_xyxy'][:4], 0)
+    det_c = np.repeat(det_c, id_num, axis=0)
+    trk_c = trackers[:, :4]
+    assert det_c.shape == trk_c.shape
+
+    ssd = np.sum((det_c - trk_c)**2, axis=1)
+    idx = np.argmin(ssd)
+    # if ssd[idx] < thresh:
+    return trackers[idx, 4]
+    # else:
+        # return -1
+
 def draw(img, detections):
     # TODO placeholder skip if empty
     if len(detections) == 0:
@@ -24,6 +41,15 @@ def draw(img, detections):
             color = d['color'],
             thickness = 3)
 
+        newid = d.get('sort_id', -1)
+        cv2.putText(withbox,
+            'ID: {}'.format(newid),
+            d['corners'][0].astype(np.uint32),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255,255,255),
+            1)
+
     return withbox
 
 def detect(opt):
@@ -39,11 +65,11 @@ def detect(opt):
         'tag36h11',
         0.168
     )
-    yolov5 = dets.YoloV5TorchDetector('yolov5n.pt')
+    yolov5 = dets.YoloV5TorchDetector('yolov5s.pt')
 
-    max_age = 10
+    max_age = 60
     min_hits = 3
-    iou_thresh = 0.3
+    iou_thresh = 0.15
     tracker = sort.Sort(max_age=max_age,
                    min_hits=min_hits,
                    iou_threshold=iou_thresh)
@@ -64,13 +90,22 @@ def detect(opt):
         else:
             sort_dets = np.stack(sort_dets)
 
-
+        # Comes back as an `(x, 5) array` in
+        # (xmin, xmax, ymin, ymax, ID)
         trackers = tracker.update(sort_dets)
-        print(trackers)
+
+        # Go back through the array and assign SORT IDs to the boxes
+        # based on IOU with SORT boxes.
+        for det in all_dets:
+            if trackers.shape[0] > 0:
+                newid = map_to_sort_id(det, trackers, thresh=256.0)
+                det['sort_id'] = newid
 
         with_boxes = draw(frame, all_dets)
         cv2.imshow('detector', with_boxes)
 
+        t_end = time.time()
+        print("{} iters/s".format(1 / (t_end - t_begin)))
         if cv2.pollKey() > -1:
             cap.release()
             cv2.destroyAllWindows()
