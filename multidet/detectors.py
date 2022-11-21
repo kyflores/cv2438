@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import cv2
 
+import prettytable as pt
 import dt_apriltags as dtap
 from scipy.spatial.transform import Rotation
 
@@ -24,6 +25,19 @@ YOLOV5_CLASSES = ["person", "bicycle", "car", "motorcycle", "airplane", "bus", "
         "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone",
         "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear",
         "hair drier", "toothbrush" ]
+
+def detections_as_table(detections):
+    table = pt.PrettyTable()
+    table.field_names = ['type', 'what', 'sort_id', 'xyxy']
+    for d in detections:
+        table.add_row([
+            d['type'],
+            d['id'],
+            d.get('sort_id', -1),
+            d['sort_xyxy'][:4].astype(int)
+        ])
+
+    return table.get_string()
 
 class AprilTagDetector:
     def __init__(self, camera_params, tag_family, tag_size=1.0):

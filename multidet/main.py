@@ -1,3 +1,4 @@
+import os
 import argparse
 import time
 
@@ -13,7 +14,6 @@ import draw
 import camera
 
 def map_to_sort_id(dets, trackers):
-    id_num, _ = trackers.shape
     xyxys = [torch.tensor(x['sort_xyxy'][:4]) for x in dets]
 
     # Collect all the detections into an (N, 4)
@@ -29,7 +29,7 @@ def map_to_sort_id(dets, trackers):
     # best matches that particular index in the detection result.
     mins = torch.argmax(ious, dim=1)
     for ix, m in enumerate(mins):
-        dets[ix]['sort_id'] = trackers[m][-1]
+        dets[ix]['sort_id'] = int(trackers[m][-1])
 
 def detect(opt):
     # See https://www.kurokesu.com/main/2020/05/22/uvc-camera-exposure-timing-in-opencv/
@@ -98,13 +98,18 @@ def detect(opt):
         cv2.imshow('detector', with_boxes)
 
         t_end = time.time()
-        print("{} iters/s".format(1 / (t_end - t_begin)))
+
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("{:.2f} iters/s".format(1 / (t_end - t_begin)))
+        print(dets.detections_as_table(all_dets))
+
         if cv2.pollKey() > -1:
             cap.release()
             cv2.destroyAllWindows()
             break
 
-if __name__ == '__main__':
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=str, default=0, help='Media source, anything supported by video capture')
     parser.add_argument('--gain', type=int, default=150, help='Gain to configure with v4l2-ctl')
@@ -129,3 +134,6 @@ if __name__ == '__main__':
     detect(opt)
     print('Detector exited.')
     exit(0)
+
+if __name__ == '__main__':
+    main()
