@@ -33,10 +33,20 @@ def map_to_sort_id(dets, trackers):
 
 def detect(opt):
     # See https://www.kurokesu.com/main/2020/05/22/uvc-camera-exposure-timing-in-opencv/
-    camera.config_gain_exposure(opt.webcam, opt.gain, opt.exposure)
-    cap = cv2.VideoCapture(opt.webcam)
+    try:
+        source = int(opt.source)
+        camera.config_gain_exposure(source, opt.gain, opt.exposure)
+        print("Configured webcam {} as source".format(source))
+    except ValueError:
+        source = str(opt.source)
+        print("Configured file {} as source".format(source))
+    except:
+        print("Unknown error parsing source")
+        exit(1)
+
+    cap = cv2.VideoCapture(source)
     if (not cap.isOpened()):
-        print("Could not open camera. Try change the device ID.")
+        print("Could not open source. Try change the device ID.")
         exit(1)
 
     # These seem to kind of work, GAIN doesn't appear to apply?
@@ -57,6 +67,10 @@ def detect(opt):
     while True:
         t_begin = time.time()
         err, frame = cap.read()
+        if (not err):
+            print("Media source didn't produce frame, stopping...")
+            break
+
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         at_det = apriltags.detect(frame_gray)
@@ -92,7 +106,7 @@ def detect(opt):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--webcam', type=int, default=0, help='/dev/videoX number')
+    parser.add_argument('--source', type=str, default=0, help='Media source, anything supported by video capture')
     parser.add_argument('--gain', type=int, default=150, help='Gain to configure with v4l2-ctl')
     parser.add_argument('--exposure', type=int, default=500, help='Exposure time to configure with v4l2-ctl')
     parser.add_argument('--tag_family', type=str, default='tag36h11', help='Apriltag family')
